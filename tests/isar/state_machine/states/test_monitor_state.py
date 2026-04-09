@@ -20,6 +20,7 @@ from isar.state_machine.states.resuming import Resuming
 from isar.state_machine.states.stopping_go_to_lockdown import StoppingGoToLockdown
 from isar.state_machine.states.stopping_go_to_recharge import StoppingGoToRecharge
 from isar.state_machine.states.stopping_return_home import StoppingReturnHome
+from isar.state_machine.states.intervention_needed import InterventionNeeded
 from isar.state_machine.states_enum import States
 from robot_interface.models.exceptions.robot_exceptions import (
     ErrorMessage,
@@ -47,7 +48,7 @@ def _mock_robot_exception_with_message() -> RobotException:
     )
 
 
-def test_stopping_to_recharge_goes_to_monitor(
+def test_stopping_to_recharge_goes_to_intervention_needed(
     sync_state_machine: StateMachine,
 ) -> None:
     sync_state_machine.current_state = StoppingGoToRecharge(
@@ -62,10 +63,10 @@ def test_stopping_to_recharge_goes_to_monitor(
 
     transition = event_handler.handler(EmptyMessage())
 
-    assert sync_state_machine.events.mqtt_queue.empty()
-
     sync_state_machine.current_state = transition(sync_state_machine)
-    assert type(sync_state_machine.current_state) is Monitor
+
+    assert not sync_state_machine.events.mqtt_queue.empty()
+    assert type(sync_state_machine.current_state) is InterventionNeeded
 
 
 def test_transitioning_to_monitor_from_stopping_when_return_home_cancelled(
